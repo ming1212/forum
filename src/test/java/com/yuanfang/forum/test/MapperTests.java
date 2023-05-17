@@ -1,15 +1,16 @@
 package com.yuanfang.forum.test;
 
 import com.yuanfang.forum.mapper.DiscussPostMapper;
+import com.yuanfang.forum.mapper.LoginTicketMapper;
 import com.yuanfang.forum.mapper.UserMapper;
 import com.yuanfang.forum.pojo.DiscussPost;
+import com.yuanfang.forum.pojo.LoginTicket;
 import com.yuanfang.forum.pojo.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @SpringBootTest
 public class MapperTests {
@@ -19,6 +20,9 @@ public class MapperTests {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private LoginTicketMapper loginTicketMapper;
 
     @Test
     public void testGetDiscussPosts(){
@@ -76,6 +80,39 @@ public class MapperTests {
     @Test
     public void testUpdatePassword(){
         userMapper.updatePassword(155,"yuanfang");
+    }
+
+    @Test
+    public void testStack(){
+
+        Stack<Integer> stack = new Stack<>();
+        Queue<Integer> queue = new ArrayDeque<>();
+        Queue<Integer> q = new LinkedList<>();
+        q.isEmpty();
+
+
+    }
+
+
+    @Test
+    public void testInsertLoginTicket(){
+
+        LoginTicket loginTicket =
+                new LoginTicket(111,"yuanfang",0,new Date(System.currentTimeMillis() + 1000 * 60 * 10));
+        loginTicketMapper.insertLoginTicket(loginTicket);
+
+    }
+
+    @Test
+    public void testGetLoginTicket(){
+
+        LoginTicket loginTicket = loginTicketMapper.getLoginTicket("yuanfang");
+        System.out.println(loginTicket);
+
+        loginTicketMapper.updateStatus("yuanfang",1);
+        loginTicket = loginTicketMapper.getLoginTicket("yuanfang");
+        System.out.println(loginTicket);
+
     }
 
 }
