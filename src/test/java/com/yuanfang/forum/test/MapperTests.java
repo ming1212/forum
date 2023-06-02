@@ -2,9 +2,11 @@ package com.yuanfang.forum.test;
 
 import com.yuanfang.forum.mapper.DiscussPostMapper;
 import com.yuanfang.forum.mapper.LoginTicketMapper;
+import com.yuanfang.forum.mapper.MessageMapper;
 import com.yuanfang.forum.mapper.UserMapper;
 import com.yuanfang.forum.pojo.DiscussPost;
 import com.yuanfang.forum.pojo.LoginTicket;
+import com.yuanfang.forum.pojo.Message;
 import com.yuanfang.forum.pojo.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,9 @@ public class MapperTests {
 
     @Autowired
     private LoginTicketMapper loginTicketMapper;
+
+    @Autowired
+    private MessageMapper messageMapper;
 
     @Test
     public void testGetDiscussPosts(){
@@ -112,6 +117,27 @@ public class MapperTests {
         loginTicketMapper.updateStatus("yuanfang",1);
         loginTicket = loginTicketMapper.getLoginTicket("yuanfang");
         System.out.println(loginTicket);
+
+    }
+
+
+    @Test
+    public void testGetLetters(){
+
+        List<Message> conversations = messageMapper.getConversations(111, 0, 20);
+        conversations.forEach(System.out::println);//遍历输出每一个会话中的最新的一条消息
+
+        int count = messageMapper.getConversationCount(111);
+        System.out.println(count);
+
+        List<Message> letters = messageMapper.getLetters("111_112", 0, 10);
+        letters.forEach(System.out::println);
+
+        int letterCount = messageMapper.getLetterCount("111_112");
+        System.out.println(letterCount);
+
+        int unreadLetterCount = messageMapper.getUnreadLetterCount(131, "111_131");
+        System.out.println(unreadLetterCount);
 
     }
 

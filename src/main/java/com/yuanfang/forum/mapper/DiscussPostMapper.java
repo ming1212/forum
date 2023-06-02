@@ -27,4 +27,26 @@ public interface DiscussPostMapper {
     // 如果只有一个参数，并且需要在动态sql中<if>使用，则必须加别名
     int getDiscussPostCount(@Param("userId") int userId);
 
+    /**
+     * 插入一条新的帖子
+     * @param discussPost
+     * @return
+     */
+    int insertDiscussPost(DiscussPost discussPost);
+
+    /**
+     * 根据帖子的id查询帖子的信息
+     * @param id
+     * @return
+     */
+    DiscussPost getDiscussPostById(int id);
+
+    /**
+     * 更新帖子的评论数量
+     * @param id  帖子的id
+     * @param commentCount  帖子的评论的数量
+     * @return
+     */
+    int updateCommentCount(int id, int commentCount);
+
 }

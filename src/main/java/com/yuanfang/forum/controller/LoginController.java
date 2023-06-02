@@ -5,11 +5,14 @@ import com.google.code.kaptcha.impl.DefaultKaptcha;
 import com.yuanfang.forum.pojo.User;
 import com.yuanfang.forum.service.UserService;
 import com.yuanfang.forum.utils.ForumConstant;
+import com.yuanfang.forum.utils.ForumUtil;
+import com.yuanfang.forum.utils.RedisKeyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -26,6 +29,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Controller
 public class LoginController implements ForumConstant {
@@ -34,6 +38,9 @@ public class LoginController implements ForumConstant {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @Autowired
     private Producer kaptchaProducer;
@@ -93,7 +100,20 @@ public class LoginController implements ForumConstant {
 
         String text = kaptchaProducer.createText();  //生成验证码的文本
         BufferedImage image = kaptchaProducer.createImage(text); //生成验证码图片
-        session.setAttribute("kaptcha",text);  //将验证码保存至session中便于后面登录请求验证验证码是否正确
+
+//        session.setAttribute("kaptcha",text);  //将验证码保存至session中便于后面登录请求验证验证码是否正确
+
+        //验证码的归属
+        String kaptchaOwner = ForumUtil.generateUUID();
+        Cookie cookie = new Cookie("kaptchaOwner", kaptchaOwner);
+        cookie.setMaxAge(60);
+        cookie.setPath(contextPath);
+        response.addCookie(cookie);
+
+        //将验证码存入Redis
+        String redisKey = RedisKeyUtil.getKaptchaKey(kaptchaOwner);
+        redisTemplate.opsForValue().set(redisKey, text, 60, TimeUnit.SECONDS);
+
 
         response.setContentType("image/png");
 
@@ -108,10 +128,19 @@ public class LoginController implements ForumConstant {
 
     @RequestMapping(path = "/login", method = RequestMethod.POST)
     public String login(String username, String password, String code, boolean rememberme,
-                        Model model, HttpServletResponse response, HttpSession session){
+                        Model model, HttpServletResponse response/*, HttpSession session*/,
+                        @CookieValue("kaptchaOwner") String kaptchaOwner){
 
         //首先检查验证码
-        String kaptcha = (String) session.getAttribute("kaptcha");
+//        String kaptcha = (String) session.getAttribute("kaptcha");
+
+        String kaptcha = null;
+        if(StringUtils.isNotBlank(kaptchaOwner)){
+            String redisKey = RedisKeyUtil.getKaptchaKey(kaptchaOwner);
+            kaptcha = (String) redisTemplate.opsForValue().get(redisKey);
+        }
+
+
         if(StringUtils.isBlank(kaptcha) || StringUtils.isBlank(code) || !kaptcha.equalsIgnoreCase(code)){
             model.addAttribute("codeMsg","验证码不正确!");
             return "/site/login";

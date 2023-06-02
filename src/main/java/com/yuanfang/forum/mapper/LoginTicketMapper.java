@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Service;
 
 @Mapper
+@Deprecated  //表示不推荐使用
 public interface LoginTicketMapper {
 
     /**
