@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yuanfang.forum.mapper.MessageMapper">
+
+    <sql id="selectFields">
+        id, from_id, to_id, conversation_id, content, status, create_time
+    </sql>
+
+    <sql id="insertFields">
+        from_id, to_id, conversation_id, content, status, create_time
+    </sql>
+
+<!--    //查询当前用户的会话列表，针对每个会话只返回一条最新的私信-->
+<!--    List<Message> getConversations(int userId, int offset, int limit);-->
+
+    <select id="getConversations" resultType="Message">
+        select <include refid="selectFields"></include>
+        from message
+        where id in (
+            select max(id) from message
+            where status != 2
+            and from_id != 1
+            and (from_id = #{userId} or to_id = #{userId})
+            group by conversation_id
+        )
+        order by id desc
+        limit #{offset}, #{limit}
+    </select>
+
+<!--    //查询当前用户的会话数量-->
+<!--    int getConversationCount(int userId);-->
+
+    <select id="getConversationCount" resultType="int">
+        select count(m.maxid) from (
+            select max(id) as maxid from message
+            where status != 2
+            and from_id != 1
+            and (from_id = #{userId} or to_id = #{userId})
+            group by conversation_id
+        ) as m
+    </select>
+
+<!--    //查询某个会话所包含的私信列表-->
+<!--    List<Message> getLetters(String conversationId, int offset, int limit);-->
+
+    <select id="getLetters" resultType="Message">
+        select <include refid="selectFields"></include>
+        from message
+        where status != 2
+        and from_id != 1
+        and conversation_id = #{conversationId}
+        order by id desc
+        limit #{offset}, #{limit}
+    </select>
+
+<!--    //查询某个会话所包含的私信数量-->
+<!--    int getLetterCount(String conversationId);-->
+
+    <select id="getLetterCount" resultType="int">
+        select count(id)
+        from message
+        where status != 2
+        and from_id != 1
+        and conversation_id = #{conversationId}
+    </select>
+
+<!--    //查询未读的私信数量-->
+<!--    int getUnreadLetterCount(int userId, String conversationId);-->
+
+    <select id="getUnreadLetterCount" resultType="int">
+        select count(id)
+        from message
+        where status = 0
+        and from_id != 1
+        and to_id = #{userId}   <!--收信人才存在未读操作,所有未读的消息-->
+        <if test="conversationId!=null">
+            and conversation_id = #{conversationId} <!--当前用户的某一个会话未读的消息-->
+        </if>
+    </select>
+
+<!--    //新增消息-->
+<!--    int insertMessage(Message message);-->
+
+    <insert id="insertMessage" parameterType="Message" keyProperty="id">
+        insert into message(<include refid="insertFields"></include>)
+        values(#{fromId},#{toId},#{conversationId},#{content},#{status},#{createTime})
+    </insert>
+
+<!--    //修改消息的状态（一下可以读很多的消息，所以需要修改状态的消息是一个集合）-->
+<!--    int updateStatus(List<Integer> ids, int status);-->
+
+    <update id="updateStatus">
+        update message set status = #{status}
+        where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+<!--    Message getLatestNotice(int userId, String topic);-->
+    <select id="getLatestNotice" resultType="Message">
+        select <include refid="selectFields"></include>
+        from message
+        where id in(
+            select max(id) from message
+            where status != 2
+            and from_id = 1
+            and to_id = #{userId}
+            and conversation_id = #{topic}
+        )
+    </select>
+
+<!--    int getNoticeCount(int userId, String topic);-->
+    <select id="getNoticeCount" resultType="int">
+        select count(id) from message
+        where status != 2
+        and from_id = 1
+        and to_id = #{userId}
+        and conversation_id = #{topic}
+    </select>
+<!--    int getNoticeUnreadCount(int userId, String topic);-->
+    <select id="getNoticeUnreadCount" resultType="int">
+        select count(id) from message
+        where status = 0
+        and from_id = 1
+        and to_id = #{userId}
+        <if test="topic!=null">
+            and conversation_id = #{topic}
+        </if>
+    </select>
+
+    <!--List<Message> getNotices(int userId, String topic, int offset, int limit);-->
+    <select id="getNotices" resultType="Message">
+        select <include refid="selectFields"></include>
+        from message
+        where status != 2
+        and from_id = 1
+        and to_id = #{userId}
+        and conversation_id = #{topic}
+        order by create_time desc
+        limit #{offset},#{limit}
+    </select>
+
+</mapper>

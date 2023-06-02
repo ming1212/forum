@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>AJAX</title>
+</head>
+<body>
+    <P>
+        <input type="button" value="发送" onclick="send();">   <!--发送Ajax请求，当触发单机事件时发送Ajax请求-->
+    </P>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+    <script>
+        function send() {
+            $.post(    <!--表示发送Ajax的post请求-->
+                "/forum/ajax",  <!--请求的路径-->
+                {"username":"小念","age":23},  <!--表示请求的参数的json格式-->
+                function (data) {   <!--ajax请求的回调函数-->
+                    console.log(typeof (data));
+                    console.log(data);
+
+                    data = $.parseJSON(data);  <!--将字符串类型传换成json对象类型-->
+                    console.log(typeof (data));
+                    console.log(data.code);
+                    console.log(data.msg);
+                }
+            );
+        }
+    </script>
+</body>
+</html>
